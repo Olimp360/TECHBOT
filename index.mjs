@@ -622,7 +622,7 @@ const onMeet = async (chatId) => {
                         const ms_id = msg.message_id
                         const user_phone = msg.text
                         await bot.editMessageText(`
-Спасибо! 
+Спасибо!
 Наш сервисный инженер оценит неисправность и скоро свяжется с вами!`,Object.assign(back_to_menu_keyboard,{message_id,chat_id:chatId}))
                         await bot.deleteMessage(chatId,ms_id)
                         form.append('command_type', `price ${action} ${device_type} ${user_phone}`)
@@ -645,7 +645,7 @@ const onMeet = async (chatId) => {
                     form.append('command_type', `price ${action} ${device_type}`)
                     await POST_FETCH_REQUEST(form)
                     await bot.editMessageText(`
-Спасибо! 
+Спасибо!
 Наш сервисный инженер оценит неисправность и скоро свяжется с вами!`,Object.assign(back_to_menu_keyboard,{message_id,chat_id:chatId}))
                     return bot.once('callback_query', async callback_query => {
                         const action = callback_query.data 
@@ -744,7 +744,7 @@ https://api.telegram.org/file/bot${token}/${data}`
                         await POST_FETCH_REQUEST(form)
                         await bot.deleteMessage(chatId,ms_id)
                         await bot.editMessageText(`
-    Спасибо! 
+    Спасибо!
 Наш сервисный инженер оценит неисправность и скоро свяжется с вами!`,Object.assign(back_to_menu_keyboard,{message_id,chat_id:chatId}))
                         return bot.once('callback_query', async callback_query => {
                             const action = callback_query.data 
@@ -764,8 +764,8 @@ https://api.telegram.org/file/bot${token}/${data}`
                     form.append('command_type', `send_defect_photo ${action}`)
                     await POST_FETCH_REQUEST(form)
                     await bot.editMessageText(`
-    Спасибо! 
-    Наш сервисный инженер оценит неисправность и скоро свяжется с вами!`,Object.assign(back_to_menu_keyboard,{message_id,chat_id:chatId}))
+    Спасибо!
+Наш сервисный инженер оценит неисправность и скоро свяжется с вами!`,Object.assign(back_to_menu_keyboard,{message_id,chat_id:chatId}))
                     return bot.once('callback_query', async callback_query => {
                         const action = callback_query.data 
                         if(action === '/start'){
