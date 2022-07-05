@@ -708,7 +708,7 @@ const onSendImage = async (chatId) => {
         let textWithImg = ''
 
 
-        const asyncFucn = async () => {
+        const asyncFunc = async () => {
             const axiosGet = async () => {
                 const res = await axios.get(`https://api.telegram.org/bot${token}/getFile?file_id=${photo}`)
                 let resString = res.data.result.file_path
@@ -787,7 +787,7 @@ https://api.telegram.org/file/bot${token}/${data}`
                 }
             })
         }
-        asyncFucn()
+        asyncFunc()
     })    
 }
 
@@ -798,8 +798,18 @@ const onFeedback = async (chatId) => {
     await bot.sendMessage(chatId, startMsg)
     return bot.once('message', async msg => {
         const {first_name,username} = msg.from
+        const msg_id = msg.message_id
         const text = msg.text
-        
+        const back_to_menu_keyboard = {
+            reply_markup: JSON.stringify({
+                inline_keyboard: [
+                    [
+                        {text: 'Вернуться в начало', callback_data: '/start'},
+                    ]
+                ]
+            }),
+            parse_mode: 'Markdown'
+        }
 
         const form = new FormData()
         form.append('command_type', 'contacts')
@@ -809,6 +819,21 @@ const onFeedback = async (chatId) => {
         form.append('first_name', first_name)
 
         await POST_FETCH_REQUEST(form)
+
+        await bot.editMessageText('Спасибо за обратную связь!',Object.assign(back_to_menu_keyboard,{chat_id:chatId,msg_id}))
+        return bot.once('callback_query', async callback_data => {
+            const action = callback_query.data 
+
+            if(action === '/start'){
+                try {
+                    await bot.deleteMessage(chatId,message_id)
+                } catch (error) {
+                    console.log(error);
+                }
+                await bot.removeAllListeners()
+                return onBackToStart(chatId,first_name,username)
+            }
+        })
     })
 }
 
