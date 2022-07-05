@@ -798,8 +798,7 @@ const onFeedback = async (chatId) => {
     await bot.sendMessage(chatId, startMsg)
     return bot.once('message', async msg => {
         const {first_name,username} = msg.from
-        const msg_id = msg.message_id
-        const text = msg.text
+        const {message_id,text} = msg
         const back_to_menu_keyboard = {
             reply_markup: JSON.stringify({
                 inline_keyboard: [
@@ -812,7 +811,7 @@ const onFeedback = async (chatId) => {
         }
 
         const form = new FormData()
-        form.append('command_type', 'contacts')
+        form.append('command_type', 'feedback')
         form.append('chat_id', chatId)
         form.append('user_text', text)
         form.append('username', username)
@@ -820,20 +819,22 @@ const onFeedback = async (chatId) => {
 
         await POST_FETCH_REQUEST(form)
 
-        await bot.editMessageText('Спасибо за обратную связь!',Object.assign(back_to_menu_keyboard,{chat_id:chatId,msg_id}))
-        return bot.once('callback_query', async callback_data => {
-            const action = callback_query.data 
 
-            if(action === '/start'){
-                try {
-                    await bot.deleteMessage(chatId,message_id)
-                } catch (error) {
-                    console.log(error);
-                }
-                await bot.removeAllListeners()
-                return onBackToStart(chatId,first_name,username)
-            }
-        })
+        await bot.editMessageText('Спасибо за обратную связь!',Object.assign(back_to_menu_keyboard,{message_id,chat_id:chatId}))
+        
+        // return bot.once('callback_query', async callback_data => {
+        //     const action = callback_query.data 
+
+        //     if(action === '/start'){
+        //         try {
+        //             await bot.deleteMessage(chatId,msg_id)
+        //         } catch (error) {
+        //             console.log(error);
+        //         }
+        //         await bot.removeAllListeners()
+        //         return onBackToStart(chatId,first_name,username)
+        //     }
+        // })
     })
 }
 
