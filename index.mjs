@@ -117,6 +117,7 @@ const onBackToStart = async (chatId,first_name,username,message_id) => {
                 [{text: 'Получить консультацию', callback_data: '/manager'}],
                 [{text: 'Отправить фото на оценку', callback_data: '/photo'}],
                 [{text: 'Посмотреть контакты', callback_data: '/contacts'}],
+                [{text: 'Оставить отзыв', callback_data: '/feedback'}],
             ]
         })
     }
@@ -167,6 +168,10 @@ const onBackToStart = async (chatId,first_name,username,message_id) => {
             bot.deleteMessage(chatId,message_id)
             return onSendImage(chatId)
         }
+        if(text === '/feedback'){
+            bot.deleteMessage(chatId,mes.message_id)
+            return onFeedback(chatId)
+        }
     })
 
     await bot.on('callback_query', async callback_query => {
@@ -187,6 +192,10 @@ const onBackToStart = async (chatId,first_name,username,message_id) => {
         if(action === '/photo'){
             bot.deleteMessage(chatId,mes.message_id)
             return onSendImage(chatId)
+        }
+        if(action === '/feedback'){
+            bot.deleteMessage(chatId,mes.message_id)
+            return onFeedback(chatId)
         }
     })
 }
@@ -794,11 +803,12 @@ https://api.telegram.org/file/bot${token}/${data}`
 const onFeedback = async (chatId) => {
     const startMsg = `Расскажите свою историю и как вам помогли в нашем сервисе. Чтобы это сделать отправьте сообщение в этот чат.`
 
-
-    await bot.sendMessage(chatId, startMsg)
+    const ms_id = await bot.sendMessage(chatId, startMsg)
     return bot.once('message', async msg => {
         const {first_name,username} = msg.from
-        const {message_id,text} = msg
+        const {message_id} = ms_id
+        const {text} = msg
+        const msg_id = msg.message_id
         const back_to_menu_keyboard = {
             reply_markup: JSON.stringify({
                 inline_keyboard: [
@@ -818,23 +828,22 @@ const onFeedback = async (chatId) => {
         form.append('first_name', first_name)
 
         await POST_FETCH_REQUEST(form)
-
-
+        await bot.deleteMessage(chatId, msg_id)
         await bot.editMessageText('Спасибо за обратную связь!',Object.assign(back_to_menu_keyboard,{message_id,chat_id:chatId}))
         
-        // return bot.once('callback_query', async callback_data => {
-        //     const action = callback_query.data 
+        return bot.once('callback_query', async callback_query => {
+            const action = callback_query.data 
 
-        //     if(action === '/start'){
-        //         try {
-        //             await bot.deleteMessage(chatId,msg_id)
-        //         } catch (error) {
-        //             console.log(error);
-        //         }
-        //         await bot.removeAllListeners()
-        //         return onBackToStart(chatId,first_name,username)
-        //     }
-        // })
+            if(action === '/start'){
+                try {
+                    await bot.deleteMessage(chatId,message_id)
+                } catch (error) {
+                    console.log(error);
+                }
+                await bot.removeAllListeners()
+                return onBackToStart(chatId,first_name,username)
+            }
+        })
     })
 }
 
