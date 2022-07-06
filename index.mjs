@@ -57,7 +57,8 @@ const onStart = async (chatId,first_name,username,message_id) => {
                 [{text: 'Получить консультацию', callback_data: '/manager'}],
                 [{text: 'Отправить фото на оценку', callback_data: '/photo'}],
                 [{text: 'Посмотреть контакты', callback_data: '/contacts'}],
-                [{text: 'Оставить отзыв', callback_data: '/feedback'}],
+                [{text: 'Расскажите свою историю', callback_data: '/feedback'}],
+                [{text: 'Оставить отзыв', callback_data: '/feedbackrate'}],
             ]
         })
     }
@@ -103,6 +104,10 @@ const onStart = async (chatId,first_name,username,message_id) => {
             bot.deleteMessage(chatId,mes.message_id)
             return onFeedback(chatId)
         }
+        if(action === '/feedbackrate'){
+            bot.deleteMessage(chatId,mes.message_id)
+            return onFeedbackRate(chatId)
+        }
         
     })
 
@@ -117,7 +122,8 @@ const onBackToStart = async (chatId,first_name,username,message_id) => {
                 [{text: 'Получить консультацию', callback_data: '/manager'}],
                 [{text: 'Отправить фото на оценку', callback_data: '/photo'}],
                 [{text: 'Посмотреть контакты', callback_data: '/contacts'}],
-                [{text: 'Оставить отзыв', callback_data: '/feedback'}],
+                [{text: 'Расскажите свою историю', callback_data: '/feedback'}],
+                [{text: 'Оставить отзыв', callback_data: '/feedbackrate'}],
             ]
         })
     }
@@ -130,13 +136,19 @@ const onBackToStart = async (chatId,first_name,username,message_id) => {
     // })
 
     const startMessage = `Что вас интересует? `
-    const form = new FormData()
-    form.append('command_type', 'backtostart')
-    form.append('chat_id', chatId)
-    form.append('username', username)
-    form.append('first_name', first_name)
 
-    await POST_FETCH_REQUEST(form)
+    try {
+        const form = new FormData()
+        form.append('command_type', 'backtostart')
+        form.append('chat_id', chatId)
+        form.append('username', username)
+        form.append('first_name', first_name)
+
+        await POST_FETCH_REQUEST(form)
+    } catch (error) {
+        console.log(error);
+    }
+    
     const mes = await bot.sendMessage(chatId, startMessage ,startOptions)
 
     await bot.on('message', async msg => {
@@ -147,6 +159,7 @@ const onBackToStart = async (chatId,first_name,username,message_id) => {
 
         console.log(msg)
         if(text === '/start'){
+            await bot.deleteMessage(chatId,message_id)
             return onStart(chatId,first_name,username,message_id)
         }
 
@@ -172,6 +185,10 @@ const onBackToStart = async (chatId,first_name,username,message_id) => {
             bot.deleteMessage(chatId,mes.message_id)
             return onFeedback(chatId)
         }
+        if(text === '/feedbackrate'){
+            bot.deleteMessage(chatId,mes.message_id)
+            return onFeedbackRate(chatId)
+        }
     })
 
     await bot.on('callback_query', async callback_query => {
@@ -196,6 +213,10 @@ const onBackToStart = async (chatId,first_name,username,message_id) => {
         if(action === '/feedback'){
             bot.deleteMessage(chatId,mes.message_id)
             return onFeedback(chatId)
+        }
+        if(action === '/feedbackrate'){
+            bot.deleteMessage(chatId,mes.message_id)
+            return onFeedbackRate(chatId)
         }
     })
 }
@@ -759,7 +780,7 @@ https://api.telegram.org/file/bot${token}/${data}`
                         await POST_FETCH_REQUEST(form)
                         await bot.deleteMessage(chatId,ms_id)
                         await bot.editMessageText(`
-    Спасибо! 
+Спасибо! 
 Наш сервисный инженер оценит неисправность и скоро свяжется с вами!`,Object.assign(back_to_menu_keyboard,{message_id,chat_id:chatId}))
                         return bot.once('callback_query', async callback_query => {
                             const action = callback_query.data 
@@ -779,8 +800,8 @@ https://api.telegram.org/file/bot${token}/${data}`
                     form.append('command_type', `send_defect_photo ${action}`)
                     await POST_FETCH_REQUEST(form)
                     await bot.editMessageText(`
-    Спасибо! 
-    Наш сервисный инженер оценит неисправность и скоро свяжется с вами!`,Object.assign(back_to_menu_keyboard,{message_id,chat_id:chatId}))
+Спасибо! 
+Наш сервисный инженер оценит неисправность и скоро свяжется с вами!`,Object.assign(back_to_menu_keyboard,{message_id,chat_id:chatId}))
                     return bot.once('callback_query', async callback_query => {
                         const action = callback_query.data 
                         if(action === '/start'){
@@ -803,22 +824,23 @@ https://api.telegram.org/file/bot${token}/${data}`
 const onFeedback = async (chatId) => {
     const startMsg = `Расскажите свою историю и как вам помогли в нашем сервисе. Чтобы это сделать отправьте сообщение в этот чат.`
 
+    const back_to_menu_keyboard = {
+        reply_markup: JSON.stringify({
+            inline_keyboard: [
+                [
+                    {text: 'Вернуться в начало', callback_data: '/start'},
+                ]
+            ]
+        }),
+        parse_mode: 'Markdown'
+    }
+
     const ms_id = await bot.sendMessage(chatId, startMsg)
     return bot.once('message', async msg => {
         const {first_name,username} = msg.from
         const {message_id} = ms_id
         const {text} = msg
         const msg_id = msg.message_id
-        const back_to_menu_keyboard = {
-            reply_markup: JSON.stringify({
-                inline_keyboard: [
-                    [
-                        {text: 'Вернуться в начало', callback_data: '/start'},
-                    ]
-                ]
-            }),
-            parse_mode: 'Markdown'
-        }
 
         const form = new FormData()
         form.append('command_type', 'feedback')
@@ -847,6 +869,78 @@ const onFeedback = async (chatId) => {
     })
 }
 
+const onFeedbackRate = async (chatId) => {
+    const startMsg = `Оцените работу нашего сервисного центра`
+    const back_to_menu_keyboard = {
+        reply_markup: JSON.stringify({
+            inline_keyboard: [
+                [
+                    {text: 'Вернуться в начало', callback_data: '/start'},
+                ]
+            ]
+        }),
+        parse_mode: 'Markdown'
+    }
+    const feedback_rates_keyboard = {
+        reply_markup: JSON.stringify({
+            inline_keyboard: [
+                [
+                    {text: '1', callback_data: '1'},
+                    {text: '2', callback_data: '2'},
+                    {text: '3', callback_data: '3'},
+                    {text: '4', callback_data: '4'},
+                    {text: '5', callback_data: '5'},
+                    {text: '5+', callback_data: '5+'},
+                ]
+            ]
+        }),
+        parse_mode: 'Markdown'
+    }
+
+    const ms_id = await bot.sendMessage(chatId, startMsg, feedback_rates_keyboard)
+
+    await bot.once('message', async msg => {
+        bot.deleteMessage(chatId,msg.message_id)
+        bot.editMessageText(startMsg + '\nУкажите оценку, нажав на одну из кнопок ниже', Object.assign(feedback_rates_keyboard,{chat_id: chatId,message_id: ms_id.message_id}))
+    })
+    await bot.once('callback_query', async callback_query => {
+        const {first_name,username} = callback_query.from
+        const {message_id} = ms_id
+        const {text} = callback_query.data
+
+        const form = new FormData()
+
+        try {
+            form.append('command_type', 'feedbackRate')
+            form.append('chat_id', chatId)
+            form.append('user_text', text)
+            form.append('username', username)
+            form.append('first_name', first_name)
+    
+            await POST_FETCH_REQUEST(form)
+        } catch (error) {
+            console.log(error);
+        }
+        await bot.editMessageText('Спасибо за обратную связь!',Object.assign(back_to_menu_keyboard,{message_id,chat_id:chatId}))
+        
+        return bot.once('callback_query', async callback_query => {
+            const action = callback_query.data 
+
+            if(action === '/start'){
+                try {
+                    await bot.deleteMessage(chatId,message_id)
+                } catch (error) {
+                    console.log(error);
+                }
+                await bot.removeAllListeners()
+                return onBackToStart(chatId,first_name,username)
+            }
+        })
+    })
+
+
+}
+
 const start = () => {
     bot.removeAllListeners()
 
@@ -856,7 +950,8 @@ const start = () => {
         {command: '/manager', description: 'Получить консультацию'},
         {command: '/photo', description: 'Отправить фото на оценку'},
         {command: '/contacts', description: 'Посмотреть контакты'},
-        {command: '/feedback', description: 'Оставить отзыв'},
+        {command: '/feedback', description: 'Отправить свою историю'},
+        {command: '/feedbackrate', description: 'Оставить отзыв'},
     ])
 
     bot.on('message', async msg => {
@@ -891,6 +986,10 @@ const start = () => {
         if(text === '/feedback'){
             bot.deleteMessage(chatId,message_id)
             return onFeedback(chatId)
+        }
+        if(text === '/feedbackrate'){
+            bot.deleteMessage(chatId,message_id)
+            return onFeedbackRate(chatId)
         }
     })
 }
