@@ -906,11 +906,11 @@ const onFeedbackRate = async (chatId) => {
     await bot.once('callback_query', async callback_query => {
         const {first_name,username} = callback_query.from
         const {message_id} = ms_id
-        const {text} = callback_query.data
+        const text = callback_query.data
 
-        const form = new FormData()
-
+        
         try {
+            const form = new FormData()
             form.append('command_type', 'feedbackRate')
             form.append('chat_id', chatId)
             form.append('user_text', text)
