@@ -545,12 +545,15 @@ const onUpgrade = async (chatId) => {
 *Контакты сервисного центра TECHSUPPORT*
 г. Москва, ул. Фадеева, 7
 ст. м. Белорусская / Маяковская / Новослободская
+[+7 (499) 229-85-77](tel:74992298577)
+
+. Санкт-Петербург, ул. Гороховая, 25
+ст. м. Адмиралтейская / Невский
+[+7 (812) 245-30-06](tel:78122453006)
 
 Часы работы сервиса:
 Ежедневно с 10:00 до 20:00
 
-Позвоните нам прямо сейчас:
-[+7 (499) 229-85-77](tel:74992298577)
                 `
     await bot.sendPhoto(chatId,'https://techsupport.com.ru/img/0-contacts.jpg',Object.assign(back_to_menu_keyboard,{caption:text}))
     return bot.once('callback_query', async callback_query => {
